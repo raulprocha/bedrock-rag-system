@@ -39,3 +39,4 @@ Thumbs.db
 *.ps
 *.md
 !README.md
+!docs/*.html

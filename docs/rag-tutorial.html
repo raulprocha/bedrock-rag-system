@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building Production RAG Systems with AWS Bedrock - From Data 2 AI</title>
+    <link rel="icon" type="image/png" href="../images/favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #FDFBF8; color: #3f3c3a; }
+        .nav-link { transition: color 0.3s ease; color: #78716c; padding: 0.5rem 1rem; }
+        .nav-link:hover { color: #A52A2A; }
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content { display: none; position: absolute; background-color: #fff; min-width: 200px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); z-index: 1; border-radius: 0.5rem; margin-top: 0.5rem; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .dropdown-content a { color: #78716c; padding: 12px 16px; text-decoration: none; display: block; }
+        .dropdown-content a:hover { background-color: #F0EBE3; color: #A52A2A; }
+        .card { background-color: #FFFFFF; border: 1px solid #F0EBE3; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .section-title { color: #A52A2A; font-size: 1.875rem; font-weight: 600; margin-bottom: 1.5rem; }
+        .subsection-title { color: #78716c; font-size: 1.5rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem; }
+        .code-block { background-color: #2d2d2d; border-radius: 0.5rem; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+        .highlight-box { background-color: #FFF8DC; border-left: 4px solid #A52A2A; padding: 1rem; margin: 1rem 0; border-radius: 0.25rem; }
+        .architecture-diagram { background-color: #f8f9fa; padding: 2rem; border-radius: 0.75rem; margin: 2rem 0; }
+        .step-number { background-color: #A52A2A; color: white; border-radius: 50%; width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 0.5rem; }
+        .tech-badge { display: inline-block; background-color: #F0EBE3; color: #A52A2A; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; margin: 0.25rem; }
+    </style>
+</head>
+<body class="antialiased">
+    <header class="sticky top-0 bg-white/90 backdrop-blur-md z-10 border-b border-gray-200">
+        <nav class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <a href="https://fromdata2ai.com/" class="text-2xl font-bold" style="color: #A52A2A;">From Data 2 AI</a>
+                <div class="flex items-center space-x-2">
+                    <a href="https://fromdata2ai.com/llm.html" class="nav-link">LLM</a>
+                    <div class="dropdown">
+                        <a href="https://fromdata2ai.com/finetuning.html" class="nav-link">Fine Tuning ▾</a>
+                        <div class="dropdown-content">
+                            <a href="https://fromdata2ai.com/seal.html">SEAL Framework</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <a href="#" class="nav-link">RAG ▾</a>
+                        <div class="dropdown-content">
+                            <a href="rag-tutorial.html">AWS Bedrock RAG</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-12 max-w-5xl">
+        <!-- Hero Section -->
+        <div class="mb-12 text-center">
+            <h1 class="text-5xl font-bold mb-4" style="color: #A52A2A;">Building Production RAG Systems</h1>
+            <p class="text-xl text-gray-600 mb-6">A Complete Guide to AWS Bedrock Knowledge Bases & Agents</p>
+            <div class="flex justify-center gap-2 flex-wrap">
+                <span class="tech-badge">AWS Bedrock</span>
+                <span class="tech-badge">RAG</span>
+                <span class="tech-badge">Vector Search</span>
+                <span class="tech-badge">Terraform</span>
+                <span class="tech-badge">Python</span>
+                <span class="tech-badge">FAISS</span>
+            </div>
+        </div>
+
+        <!-- Introduction -->
+        <div class="card p-8 mb-8">
+            <h2 class="section-title">Introduction</h2>
+            <p class="text-gray-700 leading-relaxed mb-4">
+                Retrieval Augmented Generation (RAG) has become the de facto standard for building AI systems that need to answer questions based on your own documents. But moving from a proof-of-concept to a production-ready system involves many decisions: chunking strategies, vector databases, embedding models, and infrastructure.
+            </p>
+            <p class="text-gray-700 leading-relaxed mb-4">
+                This tutorial walks you through building a complete RAG system using <strong>AWS Bedrock</strong>, featuring:
+            </p>
+            <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
+                <li><strong>Hierarchical Chunking</strong>: Parent chunks (1500 tokens) + Child chunks (300 tokens)</li>
+                <li><strong>FAISS Vector Search</strong>: High-performance similarity search with OpenSearch Serverless</li>
+                <li><strong>Automatic RAG</strong>: Bedrock Agents that know when to retrieve context</li>
+                <li><strong>Infrastructure as Code</strong>: Complete Terraform deployment</li>
+            </ul>
+            
+            <div class="highlight-box mt-6">
+                <p class="font-semibold text-gray-800 mb-2">🎯 What You'll Learn</p>
+                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                    <li>How RAG systems work under the hood</li>
+                    <li>Why hierarchical chunking outperforms fixed-size chunking</li>
+                    <li>Setting up OpenSearch Serverless with FAISS</li>
+                    <li>Deploying Bedrock Knowledge Bases and Agents</li>
+                    <li>Testing and optimizing your RAG pipeline</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Architecture Section -->
+        <div class="card p-8 mb-8">
+            <h2 class="section-title">System Architecture</h2>
+            <p class="text-gray-700 leading-relaxed mb-6">
+                Our RAG system follows a multi-stage pipeline that transforms documents into semantic vectors, stores them efficiently, and retrieves relevant context for generation.
+            </p>
+            
+            <div class="architecture-diagram">
+                <pre class="text-sm text-gray-700">
+┌─────────────┐
+│  S3 Bucket  │ ← Document Storage (PDFs, TXT, etc.)
+└──────┬──────┘
+       │
+       ↓
+┌──────────────────────────┐
+│ Bedrock Knowledge Base   │ ← Hierarchical Chunking
+│ (Titan Embeddings)       │   Parent: 1500 tokens
+└──────┬───────────────────┘   Child: 300 tokens
+       │                        Overlap: 60 tokens
+       ↓
+┌──────────────────────────┐
+│ OpenSearch Serverless    │ ← FAISS Vector Search
+│ (1536-dim vectors)       │   L2 distance + HNSW
+└──────┬───────────────────┘
+       │
+       ↓
+┌──────────────────────────┐
+│   Bedrock Agent          │ ← Automatic RAG
+│   (Claude/Nova)          │   Context-aware responses
+└──────────────────────────┘
+                </pre>
+            </div>
+
+            <h3 class="subsection-title">Key Components</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">📄 Document Storage (S3)</h4>
+                    <p class="text-sm text-gray-600">Stores source documents with versioning enabled for audit trails</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">🧠 Knowledge Base</h4>
+                    <p class="text-sm text-gray-600">Manages chunking, embedding, and synchronization with vector DB</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">🔍 Vector Database</h4>
+                    <p class="text-sm text-gray-600">OpenSearch Serverless with FAISS for sub-millisecond similarity search</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">🤖 Bedrock Agent</h4>
+                    <p class="text-sm text-gray-600">Orchestrates retrieval and generation with context-aware responses</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Understanding RAG -->
+        <div class="card p-8 mb-8">
+            <h2 class="section-title">Understanding RAG</h2>
+            
+            <h3 class="subsection-title">The Problem RAG Solves</h3>
+            <p class="text-gray-700 leading-relaxed mb-4">
+                Large Language Models (LLMs) are trained on vast amounts of data, but they have two fundamental limitations:
+            </p>
+            <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4 mb-6">
+                <li><strong>Knowledge Cutoff</strong>: They don't know about events after their training date</li>
+                <li><strong>No Private Data</strong>: They can't access your company's documents, databases, or internal knowledge</li>
+            </ul>
+
+            <div class="highlight-box">
+                <p class="font-semibold text-gray-800 mb-2">💡 RAG Solution</p>
+                <p class="text-gray-700">
+                    Instead of retraining the model (expensive and time-consuming), RAG retrieves relevant information from your documents and includes it in the prompt. The LLM then generates answers based on this retrieved context.
+                </p>
+            </div>
+
+            <h3 class="subsection-title">How RAG Works (Step by Step)</h3>
+            <div class="space-y-4 mt-4">
+                <div class="flex items-start">
+                    <span class="step-number">1</span>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Document Ingestion</h4>
+                        <p class="text-gray-600">Documents are split into chunks (we'll use hierarchical chunking for better context)</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <span class="step-number">2</span>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Embedding Generation</h4>
+                        <p class="text-gray-600">Each chunk is converted to a 1536-dimensional vector using Amazon Titan embeddings</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <span class="step-number">3</span>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Vector Storage</h4>
+                        <p class="text-gray-600">Vectors are stored in OpenSearch Serverless with FAISS indexing for fast retrieval</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <span class="step-number">4</span>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Query Processing</h4>
+                        <p class="text-gray-600">User query is embedded using the same model</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <span class="step-number">5</span>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Similarity Search</h4>
+                        <p class="text-gray-600">FAISS finds the most similar chunks using L2 distance</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <span class="step-number">6</span>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Context Augmentation</h4>
+                        <p class="text-gray-600">Retrieved chunks are added to the prompt</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <span class="step-number">7</span>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Generation</h4>
+                        <p class="text-gray-600">LLM generates answer based on retrieved context</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hierarchical Chunking -->
+        <div class="card p-8 mb-8">
+            <h2 class="section-title">Hierarchical Chunking: The Secret Sauce</h2>
+            
+            <p class="text-gray-700 leading-relaxed mb-4">
+                Most RAG systems use fixed-size chunking (e.g., 512 tokens per chunk). This works, but has a critical flaw: <strong>you lose context</strong>.
+            </p>
+
+            <h3 class="subsection-title">The Problem with Fixed-Size Chunking</h3>
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+                <p class="text-gray-700 mb-2"><strong>Example:</strong> Imagine a document about "AWS Bedrock Features"</p>
+                <ul class="list-disc list-inside text-gray-600 space-y-1 ml-4">
+                    <li>Chunk 1: "...supports multiple foundation models including..."</li>
+                    <li>Chunk 2: "...Claude, Nova, and Titan. Each model has..."</li>
+                </ul>
+                <p class="text-gray-700 mt-2">
+                    If you retrieve Chunk 2, you get the model names but miss the broader context about "AWS Bedrock Features".
+                </p>
+            </div>
+
+            <h3 class="subsection-title">Hierarchical Chunking Solution</h3>
+            <p class="text-gray-700 leading-relaxed mb-4">
+                Hierarchical chunking creates two levels of chunks:
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-blue-50 p-6 rounded-lg">
+                    <h4 class="font-semibold text-blue-900 mb-3">👶 Child Chunks (300 tokens)</h4>
+                    <ul class="text-sm text-gray-700 space-y-2">
+                        <li>✅ Precise semantic search</li>
+                        <li>✅ Find exact information</li>
+                        <li>✅ Fast retrieval</li>
+                    </ul>
+                </div>
+                <div class="bg-green-50 p-6 rounded-lg">
+                    <h4 class="font-semibold text-green-900 mb-3">👨 Parent Chunks (1500 tokens)</h4>
+                    <ul class="text-sm text-gray-700 space-y-2">
+                        <li>✅ Broad context</li>
+                        <li>✅ Complete information</li>
+                        <li>✅ Better LLM understanding</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <p class="font-semibold text-gray-800 mb-2">🎯 How It Works</p>
+                <ol class="list-decimal list-inside text-gray-700 space-y-2 ml-4">
+                    <li>System searches in <strong>child chunks</strong> (300 tokens) for precision</li>
+                    <li>When a match is found, it returns the <strong>parent chunk</strong> (1500 tokens)</li>
+                    <li>LLM gets both precise match AND surrounding context</li>
+                </ol>
+            </div>
+
+            <h3 class="subsection-title">Configuration</h3>
+            <div class="code-block">
+<pre><code class="language-hcl">vector_ingestion_configuration {
+  chunking_configuration {
+    chunking_strategy = "HIERARCHICAL"
+    hierarchical_chunking_configuration {
+      level_configuration {
+        max_tokens = 1500  # Parent chunk
+      }
+      level_configuration {
+        max_tokens = 300   # Child chunk
+      }
+      overlap_tokens = 60  # Continuity between chunks
+    }
+  }
+}</code></pre>
+            </div>
+
+            <p class="text-gray-700 leading-relaxed mt-4">
+                The <strong>60-token overlap</strong> ensures that information spanning chunk boundaries isn't lost.
+            </p>
+        </div>
+
+        <!-- Implementation Guide -->
+        <div class="card p-8 mb-8">
+            <h2 class="section-title">Implementation Guide</h2>
+            
+            <h3 class="subsection-title">Prerequisites</h3>
+            <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4 mb-6">
+                <li>AWS Account with Bedrock access</li>
+                <li>Terraform >= 1.0</li>
+                <li>Python 3.8+</li>
+                <li>AWS CLI configured</li>
+            </ul>
+
+            <h3 class="subsection-title">Step 1: Clone the Repository</h3>
+            <div class="code-block">
+<pre><code class="language-bash">git clone https://github.com/raulprocha/bedrock-rag-system.git
+cd bedrock-rag-system
+pip install -r requirements.txt</code></pre>
+            </div>
+
+            <h3 class="subsection-title">Step 2: Configure AWS Resources</h3>
+            <p class="text-gray-700 mb-4">Copy the example configuration and update with your AWS details:</p>
+            <div class="code-block">
+<pre><code class="language-bash">cp config.py.example scripts/config.py
+# Edit scripts/config.py with your AWS account ID and region</code></pre>
+            </div>
+
+            <h3 class="subsection-title">Step 3: Deploy Infrastructure</h3>
+            <p class="text-gray-700 mb-4">Use Terraform to deploy all AWS resources:</p>
+            <div class="code-block">
+<pre><code class="language-bash">cd terraform
+terraform init
+terraform plan
+terraform apply -auto-approve</code></pre>
+            </div>
+            <p class="text-gray-600 text-sm mt-2">This creates: S3 bucket, OpenSearch Serverless collection, Knowledge Base, and Bedrock Agent</p>
+
+            <h3 class="subsection-title">Step 4: Create FAISS Index</h3>
+            <p class="text-gray-700 mb-4">
+                <strong>Important:</strong> Bedrock requires the OpenSearch index to use FAISS engine (not the default nmslib).
+            </p>
+            <div class="code-block">
+<pre><code class="language-bash">python -m scripts.opensearch_manager create</code></pre>
+            </div>
+
+            <div class="highlight-box mt-4">
+                <p class="font-semibold text-gray-800 mb-2">⚠️ Common Issue</p>
+                <p class="text-gray-700">
+                    If you get "invalid engine type" error, the index was created with nmslib. Fix it:
+                </p>
+                <div class="code-block mt-2">
+<pre><code class="language-bash">python -m scripts.opensearch_manager recreate</code></pre>
+                </div>
+            </div>
+
+            <h3 class="subsection-title">Step 5: Upload Documents</h3>
+            <div class="code-block">
+<pre><code class="language-bash">BUCKET=$(terraform output -raw s3_bucket_name)
+aws s3 cp your-document.pdf s3://$BUCKET/</code></pre>
+            </div>
+
+            <h3 class="subsection-title">Step 6: Sync Knowledge Base</h3>
+            <p class="text-gray-700 mb-4">Start the ingestion job to process and index your documents:</p>
+            <div class="code-block">
+<pre><code class="language-bash">KB_ID=$(terraform output -raw knowledge_base_id)
+DS_ID=$(terraform output -raw data_source_id)
+
+aws bedrock-agent start-ingestion-job \
+  --knowledge-base-id $KB_ID \
+  --data-source-id $DS_ID \
+  --region us-east-1</code></pre>
+            </div>
+            <p class="text-gray-600 text-sm mt-2">⏱️ Processing time: ~4-5 minutes for a 50MB PDF</p>
+
+            <h3 class="subsection-title">Step 7: Test Your RAG System</h3>
+            <div class="code-block">
+<pre><code class="language-bash"># Test agent with RAG
+python tests/test_agent.py
+
+# Test direct KB retrieval
+python tests/test_kb.py
+
+# Interactive CLI
+python cli.py "What are the main features of Amazon Bedrock?"</code></pre>
+            </div>
+        </div>
+
+        <!-- Code Deep Dive -->
+        <div class="card p-8 mb-8">
+            <h2 class="section-title">Code Deep Dive</h2>
+            
+            <h3 class="subsection-title">BedrockClient: High-Level API</h3>
+            <p class="text-gray-700 mb-4">
+                The <code>BedrockClient</code> class provides a clean interface for interacting with Bedrock services:
+            </p>
+            <div class="code-block">
+<pre><code class="language-python">from scripts.bedrock_client import BedrockClient
+
+# Initialize client
+client = BedrockClient()
+
+# Query agent (automatic RAG)
+response = client.invoke_agent("What is hierarchical chunking?")
+print(response)
+
+# Direct KB retrieval
+results = client.retrieve_from_kb("FAISS vector search", max_results=5)
+for result in results:
+    print(f"Score: {result['score']:.4f}")
+    print(f"Text: {result['content']['text'][:200]}...")
+</code></pre>
+            </div>
+
+            <h3 class="subsection-title">Understanding the Code</h3>
+            <div class="space-y-4 mt-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">1. invoke_agent()</h4>
+                    <p class="text-gray-600 text-sm mb-2">
+                        Sends query to Bedrock Agent, which automatically:
+                    </p>
+                    <ul class="list-disc list-inside text-gray-600 text-sm space-y-1 ml-4">
+                        <li>Determines if KB retrieval is needed</li>
+                        <li>Retrieves relevant chunks</li>
+                        <li>Generates context-aware response</li>
+                    </ul>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">2. retrieve_from_kb()</h4>
+                    <p class="text-gray-600 text-sm mb-2">
+                        Bypasses the agent for direct vector search:
+                    </p>
+                    <ul class="list-disc list-inside text-gray-600 text-sm space-y-1 ml-4">
+                        <li>Embeds query using Titan</li>
+                        <li>Performs FAISS similarity search</li>
+                        <li>Returns top-k results with scores</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3 class="subsection-title">OpenSearch Manager</h3>
+            <p class="text-gray-700 mb-4">
+                Manages OpenSearch Serverless index lifecycle:
+            </p>
+            <div class="code-block">
+<pre><code class="language-python">from scripts.opensearch_manager import OpenSearchManager
+
+manager = OpenSearchManager()
+
+# Create index with FAISS
+manager.create_index(
+    index_name="bedrock-knowledge-base-index",
+    dimension=1536,  # Titan embeddings
+    engine="faiss"
+)
+
+# Check configuration
+info = manager.get_index_info()
+print(f"Engine: {info['mappings']['properties']['vector']['method']['engine']}")
+
+# Recreate if needed
+manager.recreate_index()
+</code></pre>
+            </div>
+
+            <h3 class="subsection-title">Type Hints & Documentation</h3>
+            <p class="text-gray-700 mb-4">
+                All code includes comprehensive type hints and docstrings:
+            </p>
+            <div class="code-block">
+<pre><code class="language-python">def invoke_agent(
+    self,
+    query: str,
+    agent_id: Optional[str] = None,
+    agent_alias_id: Optional[str] = None,
+    session_id: str = "default-session"
+) -> str:
+    """
+    Invoke Bedrock Agent with a query.
+    
+    Args:
+        query: User query text.
+        agent_id: Agent ID (uses config if not provided).
+        agent_alias_id: Agent alias ID (uses config if not provided).
+        session_id: Session ID for conversation continuity.
+        
+    Returns:
+        Complete response text from the agent.
+    """
+</code></pre>
+            </div>
+        </div>
+
+        <!-- Performance & Optimization -->
+        <div class="card p-8 mb-8">
+            <h2 class="section-title">Performance & Optimization</h2>
+            
+            <h3 class="subsection-title">Benchmarks</h3>
+            <p class="text-gray-700 mb-4">Based on testing with 49.4 MB PDF (Amazon Bedrock User Guide):</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-blue-900 mb-2">⏱️ Indexing Time</h4>
+                    <p class="text-2xl font-bold text-blue-700">~4-5 min</p>
+                    <p class="text-sm text-gray-600 mt-1">One-time processing per document</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-green-900 mb-2">🚀 Query Latency</h4>
+                    <p class="text-2xl font-bold text-green-700">~2-3 sec</p>
+                    <p class="text-sm text-gray-600 mt-1">Including retrieval + generation</p>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-purple-900 mb-2">🎯 Retrieval Accuracy</h4>
+                    <p class="text-2xl font-bold text-purple-700">High</p>
+                    <p class="text-sm text-gray-600 mt-1">Hierarchical chunking advantage</p>
+                </div>
+                <div class="bg-orange-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-orange-900 mb-2">📊 Context Window</h4>
+                    <p class="text-2xl font-bold text-orange-700">1500 tokens</p>
+                    <p class="text-sm text-gray-600 mt-1">Per retrieved chunk</p>
+                </div>
+            </div>
+
+            <h3 class="subsection-title">Optimization Tips</h3>
+            <div class="space-y-4">
+                <div class="border-l-4 border-blue-500 pl-4">
+                    <h4 class="font-semibold text-gray-800">1. Adjust Chunk Sizes</h4>
+                    <p class="text-gray-600 text-sm">
+                        Experiment with parent/child ratios. Larger parents = more context, but slower retrieval.
+                    </p>
+                </div>
+                <div class="border-l-4 border-green-500 pl-4">
+                    <h4 class="font-semibold text-gray-800">2. Tune Overlap</h4>
+                    <p class="text-gray-600 text-sm">
+                        60 tokens works well, but increase for documents with dense cross-references.
+                    </p>
+                </div>
+                <div class="border-l-4 border-purple-500 pl-4">
+                    <h4 class="font-semibold text-gray-800">3. Limit Retrieved Chunks</h4>
+                    <p class="text-gray-600 text-sm">
+                        Start with 3-5 chunks. More isn't always better—can confuse the LLM.
+                    </p>
+                </div>
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h4 class="font-semibold text-gray-800">4. Monitor Costs</h4>
+                    <p class="text-gray-600 text-sm">
+                        OpenSearch Serverless is the main cost (~$175/month). Delete when not in use.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cost Analysis -->
+        <div class="card p-8 mb-8">
+            <h2 class="section-title">Cost Analysis</h2>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border border-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cost</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900">OpenSearch Serverless</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">~$175/month</td>
+                            <td class="px-6 py-4 text-sm text-gray-600">2 OCUs (search + indexing)</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900">Bedrock Agent</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">~$0.002/1K tokens</td>
+                            <td class="px-6 py-4 text-sm text-gray-600">Pay-per-use</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900">S3 Storage</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">~$0.023/GB/month</td>
+                            <td class="px-6 py-4 text-sm text-gray-600">Minimal for documents</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900">Titan Embeddings</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">~$0.0001/1K tokens</td>
+                            <td class="px-6 py-4 text-sm text-gray-600">One-time per document</td>
+                        </tr>
+                        <tr class="bg-gray-50 font-semibold">
+                            <td class="px-6 py-4 text-sm text-gray-900">Total</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">~$180-200/month</td>
+                            <td class="px-6 py-4 text-sm text-gray-600">For continuous operation</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="highlight-box mt-6">
+                <p class="font-semibold text-gray-800 mb-2">💰 Cost Optimization</p>
+                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                    <li>Delete OpenSearch collection when not in use (main cost driver)</li>
+                    <li>Use S3 Intelligent-Tiering for documents</li>
+                    <li>Batch document processing to minimize embedding costs</li>
+                    <li>Monitor with AWS Cost Explorer</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Troubleshooting -->
+        <div class="card p-8 mb-8">
+            <h2 class="section-title">Troubleshooting</h2>
+            
+            <div class="space-y-6">
+                <div class="border border-red-200 bg-red-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-red-900 mb-2">❌ Error: "Invalid engine type"</h4>
+                    <p class="text-gray-700 mb-2"><strong>Cause:</strong> OpenSearch index was created with nmslib instead of FAISS</p>
+                    <p class="text-gray-700 mb-2"><strong>Solution:</strong></p>
+                    <div class="code-block">
+<pre><code class="language-bash">python -m scripts.opensearch_manager recreate</code></pre>
+                    </div>
+                </div>
+
+                <div class="border border-yellow-200 bg-yellow-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-yellow-900 mb-2">⚠️ Agent doesn't return document information</h4>
+                    <p class="text-gray-700 mb-2"><strong>Checklist:</strong></p>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                        <li>Verify ingestion job completed: <code>aws bedrock-agent list-ingestion-jobs</code></li>
+                        <li>Check documents in S3: <code>aws s3 ls s3://your-bucket/</code></li>
+                        <li>Test direct retrieval: <code>python tests/test_kb.py</code></li>
+                        <li>Verify agent-KB association in AWS Console</li>
+                    </ul>
+                </div>
+
+                <div class="border border-blue-200 bg-blue-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-blue-900 mb-2">ℹ️ Slow query responses</h4>
+                    <p class="text-gray-700 mb-2"><strong>Possible causes:</strong></p>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                        <li>Too many chunks being retrieved (reduce max_results)</li>
+                        <li>Large parent chunks (consider reducing from 1500 tokens)</li>
+                        <li>Cold start (first query after idle period)</li>
+                    </ul>
+                </div>
+
+                <div class="border border-purple-200 bg-purple-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-purple-900 mb-2">🔒 Permission denied errors</h4>
+                    <p class="text-gray-700 mb-2"><strong>Required IAM permissions:</strong></p>
+                    <div class="code-block">
+<pre><code class="language-json">{
+  "Effect": "Allow",
+  "Action": [
+    "bedrock:InvokeModel",
+    "bedrock:Retrieve",
+    "aoss:APIAccessAll",
+    "s3:GetObject",
+    "s3:ListBucket"
+  ],
+  "Resource": "*"
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Topics -->
+        <div class="card p-8 mb-8">
+            <h2 class="section-title">Advanced Topics</h2>
+            
+            <h3 class="subsection-title">Multimodal RAG</h3>
+            <p class="text-gray-700 mb-4">
+                Bedrock Knowledge Bases support images, audio, and video through two approaches:
+            </p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-blue-50 p-6 rounded-lg">
+                    <h4 class="font-semibold text-blue-900 mb-3">Nova Multimodal Embeddings</h4>
+                    <ul class="text-sm text-gray-700 space-y-2">
+                        <li>✅ Direct embedding of multimedia</li>
+                        <li>✅ Visual similarity search</li>
+                        <li>✅ Image-based queries</li>
+                        <li>⚙️ Configure chunk duration (1-30s)</li>
+                    </ul>
+                </div>
+                <div class="bg-green-50 p-6 rounded-lg">
+                    <h4 class="font-semibold text-green-900 mb-3">Bedrock Data Automation</h4>
+                    <ul class="text-sm text-gray-700 space-y-2">
+                        <li>✅ Converts to text first</li>
+                        <li>✅ Audio transcription</li>
+                        <li>✅ Video scene descriptions</li>
+                        <li>✅ Image OCR</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3 class="subsection-title">Metadata Filtering</h3>
+            <p class="text-gray-700 mb-4">
+                Add metadata to documents for filtered retrieval:
+            </p>
+            <div class="code-block">
+<pre><code class="language-python">response = client.retrieve(
+    knowledgeBaseId='KB_ID',
+    retrievalQuery={'text': 'query'},
+    retrievalConfiguration={
+        'vectorSearchConfiguration': {
+            'filter': {
+                'equals': {
+                    'key': 'category',
+                    'value': 'technical'
+                }
+            }
+        }
+    }
+)</code></pre>
+            </div>
+
+            <h3 class="subsection-title">Semantic Chunking</h3>
+            <p class="text-gray-700 mb-4">
+                Alternative to hierarchical chunking that uses NLP to split at semantic boundaries:
+            </p>
+            <div class="code-block">
+<pre><code class="language-hcl">chunking_configuration {
+  chunking_strategy = "SEMANTIC"
+  semantic_chunking_configuration {
+    max_tokens = 300
+    buffer_size = 1
+    breakpoint_percentile_threshold = 95
+  }
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- Best Practices -->
+        <div class="card p-8 mb-8">
+            <h2 class="section-title">Best Practices</h2>
+            
+            <div class="space-y-6">
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">📚 Document Preparation</h3>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                        <li>Clean PDFs work best (avoid scanned images without OCR)</li>
+                        <li>Structure documents with clear headings</li>
+                        <li>Remove unnecessary formatting</li>
+                        <li>Keep file sizes reasonable (&lt;100MB per file)</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">🔍 Retrieval Optimization</h3>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                        <li>Start with 3-5 retrieved chunks, adjust based on results</li>
+                        <li>Monitor retrieval scores (below 0.3 usually indicates poor match)</li>
+                        <li>Use metadata filtering for large document sets</li>
+                        <li>Test with diverse queries to validate coverage</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">🔒 Security</h3>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                        <li>Use IAM roles with least privilege</li>
+                        <li>Enable S3 bucket versioning for audit trails</li>
+                        <li>Encrypt data at rest (OpenSearch Serverless default)</li>
+                        <li>Monitor access with CloudWatch</li>
+                        <li>Never commit AWS credentials to Git</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">💰 Cost Management</h3>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                        <li>Delete OpenSearch collection when not actively developing</li>
+                        <li>Use lifecycle policies for S3 documents</li>
+                        <li>Batch document uploads to minimize ingestion jobs</li>
+                        <li>Set up AWS Budget alerts</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">🧪 Testing</h3>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                        <li>Create a test suite with known questions and expected answers</li>
+                        <li>Test edge cases (ambiguous queries, out-of-scope questions)</li>
+                        <li>Monitor response quality over time</li>
+                        <li>A/B test different chunking strategies</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resources -->
+        <div class="card p-8 mb-8">
+            <h2 class="section-title">Resources & Links</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-3">📖 Documentation</h3>
+                    <ul class="space-y-2">
+                        <li><a href="https://docs.aws.amazon.com/bedrock/" class="text-blue-600 hover:text-blue-800 underline">Amazon Bedrock Docs</a></li>
+                        <li><a href="https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html" class="text-blue-600 hover:text-blue-800 underline">Knowledge Bases Guide</a></li>
+                        <li><a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless.html" class="text-blue-600 hover:text-blue-800 underline">OpenSearch Serverless</a></li>
+                        <li><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs" class="text-blue-600 hover:text-blue-800 underline">Terraform AWS Provider</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-3">💻 Code & Tools</h3>
+                    <ul class="space-y-2">
+                        <li><a href="https://github.com/raulprocha/bedrock-rag-system" class="text-blue-600 hover:text-blue-800 underline">GitHub Repository</a></li>
+                        <li><a href="https://modelcontextprotocol.io/" class="text-blue-600 hover:text-blue-800 underline">Model Context Protocol</a></li>
+                        <li><a href="https://python.langchain.com/" class="text-blue-600 hover:text-blue-800 underline">LangChain (alternative)</a></li>
+                        <li><a href="https://www.pinecone.io/" class="text-blue-600 hover:text-blue-800 underline">Pinecone (alternative vector DB)</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-3">📊 Research Papers</h3>
+                    <ul class="space-y-2">
+                        <li><a href="https://arxiv.org/abs/2005.11401" class="text-blue-600 hover:text-blue-800 underline">RAG: Retrieval-Augmented Generation</a></li>
+                        <li><a href="https://arxiv.org/abs/2004.04906" class="text-blue-600 hover:text-blue-800 underline">Dense Passage Retrieval</a></li>
+                        <li><a href="https://engineering.fb.com/2017/03/29/data-infrastructure/faiss-a-library-for-efficient-similarity-search/" class="text-blue-600 hover:text-blue-800 underline">FAISS: Efficient Similarity Search</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-3">🎓 Learning</h3>
+                    <ul class="space-y-2">
+                        <li><a href="https://www.deeplearning.ai/short-courses/building-applications-vector-databases/" class="text-blue-600 hover:text-blue-800 underline">Vector Databases Course</a></li>
+                        <li><a href="https://www.coursera.org/learn/generative-ai-with-llms" class="text-blue-600 hover:text-blue-800 underline">Generative AI with LLMs</a></li>
+                        <li><a href="https://aws.amazon.com/bedrock/workshops/" class="text-blue-600 hover:text-blue-800 underline">AWS Bedrock Workshops</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conclusion -->
+        <div class="card p-8 mb-8">
+            <h2 class="section-title">Conclusion</h2>
+            <p class="text-gray-700 leading-relaxed mb-4">
+                You've now built a production-ready RAG system using AWS Bedrock with hierarchical chunking, FAISS vector search, and automatic retrieval through Bedrock Agents.
+            </p>
+            <p class="text-gray-700 leading-relaxed mb-4">
+                This architecture provides:
+            </p>
+            <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4 mb-6">
+                <li><strong>Better context</strong> through hierarchical chunking</li>
+                <li><strong>Fast retrieval</strong> with FAISS indexing</li>
+                <li><strong>Scalability</strong> via serverless infrastructure</li>
+                <li><strong>Maintainability</strong> with Infrastructure as Code</li>
+            </ul>
+
+            <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg mt-6">
+                <h3 class="font-semibold text-gray-800 mb-3">🚀 Next Steps</h3>
+                <ul class="space-y-2 text-gray-700">
+                    <li>✅ Experiment with different chunking strategies</li>
+                    <li>✅ Add metadata filtering for your use case</li>
+                    <li>✅ Implement monitoring and logging</li>
+                    <li>✅ Test with multimodal content</li>
+                    <li>✅ Optimize costs for production</li>
+                </ul>
+            </div>
+
+            <div class="text-center mt-8 pt-6 border-t border-gray-200">
+                <p class="text-gray-600 mb-4">Questions or feedback?</p>
+                <a href="mailto:raulrocha.rpr@gmail.com" class="inline-block bg-[#A52A2A] text-white px-6 py-3 rounded-lg hover:bg-[#8B2323] transition-colors">
+                    Get in Touch
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 py-8 mt-16">
+        <div class="container mx-auto px-6 text-center text-gray-600">
+            <p class="mb-2">Built with ❤️ by <a href="https://fromdata2ai.com/" class="text-[#A52A2A] hover:underline">Raul Rocha</a></p>
+            <p class="text-sm">AI/ML Specialist | Data Scientist | LLM Engineer</p>
+            <div class="mt-4 flex justify-center space-x-4">
+                <a href="https://github.com/raulprocha" class="text-gray-600 hover:text-[#A52A2A]">GitHub</a>
+                <a href="https://linkedin.com/in/raulprocha" class="text-gray-600 hover:text-[#A52A2A]">LinkedIn</a>
+                <a href="mailto:raulrocha.rpr@gmail.com" class="text-gray-600 hover:text-[#A52A2A]">Email</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-hcl.min.js"></script>
+</body>
+</html>
