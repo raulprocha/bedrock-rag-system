@@ -1,0 +1,19 @@
+"""
+Configuration file for AWS Bedrock RAG system.
+Copy this file to config.py and update with your values.
+"""
+
+# AWS Configuration
+AWS_PROFILE = "your-aws-profile"
+AWS_REGION = "us-east-1"
+AWS_ACCOUNT_ID = "123456789012"
+
+# OpenSearch Serverless
+OPENSEARCH_COLLECTION_ID = "your-collection-id"
+OPENSEARCH_ENDPOINT = f"https://{OPENSEARCH_COLLECTION_ID}.{AWS_REGION}.aoss.amazonaws.com"
+
+# Bedrock Resources
+KNOWLEDGE_BASE_ID = "YOUR_KB_ID"
+DATA_SOURCE_ID = "YOUR_DS_ID"
+AGENT_ID = "YOUR_AGENT_ID"
+AGENT_ALIAS_ID = "YOUR_ALIAS_ID"
