@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "bedrock-agent": {
+      "command": "python3",
+      "args": ["/home/raul.rocha/kb_agent-core/mcp_server.py"],
+      "env": {
+        "AWS_PROFILE": "CIANDT-Contributor-253223147282"
+      }
+    }
+  }
+}
