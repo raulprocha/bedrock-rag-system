@@ -1,15 +1,22 @@
-# Amazon Bedrock RAG System with Knowledge Base & Agent
+# Amazon Bedrock RAG System
 
-Production-ready RAG (Retrieval Augmented Generation) system demonstrating advanced AWS Bedrock capabilities including Knowledge Bases, Agents, and Model Context Protocol (MCP) integration.
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Terraform](https://img.shields.io/badge/terraform-1.0+-purple.svg)](https://www.terraform.io/)
+[![AWS](https://img.shields.io/badge/AWS-Bedrock-orange.svg)](https://aws.amazon.com/bedrock/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🎯 Project Overview
+Production-ready Retrieval Augmented Generation (RAG) system built with AWS Bedrock, featuring hierarchical chunking, FAISS vector search, and Model Context Protocol (MCP) integration.
 
-This project showcases a complete implementation of a RAG system using AWS Bedrock services, featuring:
-- **Hierarchical chunking** for optimal context retrieval
-- **FAISS-powered vector search** via OpenSearch Serverless
-- **Automatic RAG** through Bedrock Agents
-- **MCP integration** for seamless AI assistant workflows
-- **Infrastructure as Code** with Terraform
+## 🎯 Overview
+
+This project demonstrates enterprise-grade implementation of a RAG system using AWS Bedrock services:
+
+- **Hierarchical Chunking**: Parent chunks (1500 tokens) + Child chunks (300 tokens) with 60-token overlap
+- **FAISS Vector Search**: High-performance similarity search via OpenSearch Serverless
+- **Amazon Titan Embeddings**: 1536-dimensional semantic vectors
+- **Automatic RAG**: Bedrock Agent with intelligent context retrieval
+- **MCP Integration**: Seamless AI assistant workflows
+- **Infrastructure as Code**: Complete Terraform deployment
 
 ## 🏗️ Architecture
 
@@ -43,172 +50,149 @@ This project showcases a complete implementation of a RAG system using AWS Bedro
 └──────────────────────────┘
 ```
 
-## ✨ Key Features
+## 📁 Project Structure
 
-### 1. Hierarchical Chunking Strategy
-- **Parent chunks (1500 tokens)**: Provide broad context for comprehensive answers
-- **Child chunks (300 tokens)**: Enable precise semantic search
-- **60-token overlap**: Maintains continuity across chunk boundaries
-- **Benefit**: Searches in child chunks for precision, returns parent chunks for context
-
-### 2. FAISS Vector Search
-- **Engine**: FAISS (Facebook AI Similarity Search)
-- **Dimensions**: 1536 (Amazon Titan Embeddings)
-- **Algorithm**: HNSW (Hierarchical Navigable Small World)
-- **Distance metric**: L2 (Euclidean distance)
-- **Performance**: Sub-millisecond similarity search at scale
-
-### 3. Automatic RAG with Bedrock Agent
-- Agent automatically determines when to query the Knowledge Base
-- Seamless integration between retrieval and generation
-- Context-aware responses with source attribution
-- Session management for multi-turn conversations
-
-### 4. MCP Integration
-- Exposes Bedrock capabilities as MCP tools
-- Compatible with Kiro CLI and other MCP clients
-- Two main tools:
-  - `invoke_bedrock_agent`: Full RAG pipeline
-  - `retrieve_from_kb`: Direct KB queries
+```
+.
+├── terraform/              # Infrastructure as Code
+│   ├── main.tf            # Main configuration
+│   ├── variables.tf       # Input variables
+│   ├── outputs.tf         # Output values
+│   ├── s3.tf              # S3 bucket for documents
+│   ├── opensearch.tf      # OpenSearch Serverless
+│   ├── knowledge_base.tf  # Knowledge Base + Data Source
+│   └── agent.tf           # Bedrock Agent
+│
+├── scripts/               # Python utilities
+│   ├── __init__.py
+│   ├── config.py          # Configuration management
+│   ├── opensearch_manager.py  # OpenSearch operations
+│   └── bedrock_client.py  # Bedrock API client
+│
+├── tests/                 # Test suite
+│   ├── __init__.py
+│   ├── test_agent.py      # Agent testing
+│   └── test_kb.py         # KB retrieval testing
+│
+├── docs/                  # Additional documentation
+│
+├── cli.py                 # Interactive CLI
+├── mcp_server.py          # MCP server implementation
+├── requirements.txt       # Python dependencies
+├── config.py.example      # Configuration template
+└── README.md              # This file
+```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-```bash
-# Required tools
-- AWS CLI configured
+- AWS CLI configured with appropriate credentials
 - Terraform >= 1.0
 - Python 3.8+
+- Required AWS permissions (Bedrock, OpenSearch Serverless, S3, IAM)
 
-# Required AWS permissions
-- bedrock:*
-- aoss:* (OpenSearch Serverless)
-- s3:*
-- iam:PassRole
-```
+### Installation
 
-### 1. Clone and Configure
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/raulprocha/bedrock-rag-system.git
+   cd bedrock-rag-system
+   ```
 
-```bash
-git clone <repository-url>
-cd kb_agent-core
+2. **Install Python dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-# Copy and update configuration files
-cp config.py.example config.py
-cp terraform.tfvars.example terraform.tfvars
+3. **Configure AWS resources**
+   ```bash
+   cp config.py.example scripts/config.py
+   # Edit scripts/config.py with your AWS details
+   ```
 
-# Edit with your AWS account details
-vim config.py
-vim terraform.tfvars
-```
+4. **Deploy infrastructure**
+   ```bash
+   cd terraform
+   terraform init
+   terraform plan
+   terraform apply
+   ```
 
-### 2. Deploy Infrastructure
+5. **Create OpenSearch index**
+   ```bash
+   python -m scripts.opensearch_manager create
+   ```
 
-```bash
-# Initialize Terraform
-terraform init
+6. **Upload documents**
+   ```bash
+   aws s3 cp your-document.pdf s3://YOUR_BUCKET_NAME/
+   ```
 
-# Review plan
-terraform plan
+7. **Sync Knowledge Base**
+   ```bash
+   python -m scripts.bedrock_client sync
+   ```
 
-# Deploy
-terraform apply -auto-approve
-```
+## 💻 Usage
 
-### 3. Create OpenSearch Index
-
-The Knowledge Base requires a FAISS-enabled index:
-
-```bash
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Create index (update config.py first)
-python3 create_index.py
-```
-
-### 4. Upload Documents
+### Interactive CLI
 
 ```bash
-# Get bucket name from Terraform
-BUCKET=$(terraform output -raw s3_bucket_name)
+# Interactive mode
+python cli.py
 
-# Upload your documents
-aws s3 cp your-document.pdf s3://$BUCKET/
+# Single query
+python cli.py "What are the main features of Amazon Bedrock?"
 ```
 
-### 5. Sync Knowledge Base
+### Python API
+
+```python
+from scripts.bedrock_client import BedrockClient
+
+# Initialize client
+client = BedrockClient()
+
+# Query agent
+response = client.invoke_agent("Your question here")
+print(response)
+
+# Direct KB retrieval
+results = client.retrieve_from_kb("Search query", max_results=5)
+for result in results:
+    print(f"Score: {result['score']}")
+    print(f"Text: {result['content']['text']}")
+```
+
+### Testing
 
 ```bash
-# Get resource IDs
-KB_ID=$(terraform output -raw knowledge_base_id)
-DS_ID=$(terraform output -raw data_source_id)
+# Test agent
+python tests/test_agent.py
 
-# Start ingestion job
-aws bedrock-agent start-ingestion-job \
-  --knowledge-base-id $KB_ID \
-  --data-source-id $DS_ID \
-  --region us-east-1
-
-# Monitor progress
-aws bedrock-agent get-ingestion-job \
-  --knowledge-base-id $KB_ID \
-  --data-source-id $DS_ID \
-  --ingestion-job-id <JOB_ID>
+# Test KB retrieval
+python tests/test_kb.py
 ```
 
-### 6. Test the System
+### OpenSearch Management
 
 ```bash
-# Test agent with RAG
-python3 test_agent.py
+# Create index
+python -m scripts.opensearch_manager create
 
-# Test direct KB retrieval
-python3 test_kb.py
+# Check index configuration
+python -m scripts.opensearch_manager check
 
-# Interactive CLI
-python3 ask_agent.py "What are the main features of Amazon Bedrock?"
-```
-
-## 📁 Project Structure
-
-```
-.
-├── README.md                      # This file
-├── LICENSE                        # MIT License
-├── requirements.txt               # Python dependencies
-├── .gitignore                     # Git ignore rules
-│
-├── config.py.example              # Configuration template
-├── terraform.tfvars.example       # Terraform variables template
-│
-├── main.tf                        # Terraform main config
-├── variables.tf                   # Terraform variables
-├── outputs.tf                     # Terraform outputs
-├── s3.tf                          # S3 bucket for documents
-├── opensearch.tf                  # OpenSearch Serverless
-├── knowledge_base.tf              # Knowledge Base + Data Source
-├── agent.tf                       # Bedrock Agent
-│
-├── create_index.py                # Create FAISS index
-├── recreate_index.py              # Recreate index (if needed)
-├── check_index.py                 # Verify index configuration
-│
-├── test_agent.py                  # Test agent with RAG
-├── test_kb.py                     # Test KB retrieval
-├── ask_agent.py                   # Interactive CLI
-│
-├── mcp_server.py                  # MCP server implementation
-├── mcp_config.json                # MCP configuration
-└── test_mcp.sh                    # MCP testing script
+# Recreate index with FAISS
+python -m scripts.opensearch_manager recreate
 ```
 
 ## 🔧 Configuration
 
 ### Chunking Strategy
 
-Modify `knowledge_base.tf` to adjust chunking parameters:
+Edit `terraform/knowledge_base.tf`:
 
 ```hcl
 vector_ingestion_configuration {
@@ -229,45 +213,17 @@ vector_ingestion_configuration {
 
 ### Embedding Model
 
-Change embedding model in `variables.tf`:
+Edit `terraform/variables.tf`:
 
 ```hcl
 variable "embedding_model_arn" {
   default = "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v1"
-  # Or use: amazon.titan-embed-text-v2
-  # Or use: cohere.embed-english-v3
 }
 ```
 
-## 🧪 Testing
+## 📊 Performance
 
-### Unit Tests
-
-```bash
-# Test agent invocation
-python3 test_agent.py
-
-# Test KB retrieval
-python3 test_kb.py
-
-# Test MCP server
-./test_mcp.sh
-```
-
-### Integration Tests
-
-```bash
-# Test full RAG pipeline
-python3 ask_agent.py "Explain hierarchical chunking in Bedrock"
-
-# Test with different queries
-python3 ask_agent.py "What is FAISS?"
-python3 ask_agent.py "How does RAG work?"
-```
-
-## 📊 Performance Metrics
-
-Based on testing with a 49.4 MB PDF (Amazon Bedrock User Guide):
+Based on testing with 49.4 MB PDF (Amazon Bedrock User Guide):
 
 | Metric | Value |
 |--------|-------|
@@ -278,136 +234,47 @@ Based on testing with a 49.4 MB PDF (Amazon Bedrock User Guide):
 
 ## 💰 Cost Estimation
 
-| Service | Cost | Notes |
-|---------|------|-------|
-| OpenSearch Serverless | ~$175/month | 2 OCUs (search + indexing) |
-| Bedrock Agent | ~$0.002/1K tokens | Pay-per-use |
-| S3 Storage | ~$0.023/GB/month | Minimal for documents |
-| Titan Embeddings | ~$0.0001/1K tokens | One-time per document |
+| Service | Monthly Cost | Notes |
+|---------|-------------|-------|
+| OpenSearch Serverless | ~$175 | 2 OCUs (search + indexing) |
+| Bedrock Agent | Pay-per-use | ~$0.002/1K tokens |
+| S3 Storage | ~$0.023/GB | Minimal for documents |
+| Titan Embeddings | One-time | ~$0.0001/1K tokens |
 
-**Total estimated cost**: ~$180-200/month for continuous operation
+**Total**: ~$180-200/month for continuous operation
 
-**Cost optimization tips**:
-- Delete OpenSearch collection when not in use
-- Use S3 Intelligent-Tiering for documents
-- Batch document processing to minimize embedding costs
+## 🔒 Security
 
-## 🔒 Security Best Practices
-
-- ✅ IAM roles with least privilege principle
+- ✅ IAM roles with least privilege
 - ✅ S3 bucket versioning enabled
 - ✅ OpenSearch Serverless encryption at rest
-- ✅ VPC endpoints for private connectivity (optional)
+- ✅ No credentials in repository
 - ✅ CloudWatch logging for audit trails
-- ⚠️ Never commit credentials to Git
-- ⚠️ Use AWS Secrets Manager for sensitive data
 
 ## 🐛 Troubleshooting
 
-### Issue: 403 Forbidden when creating Knowledge Base
+See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for common issues and solutions.
 
-**Solution**: Ensure IAM role has required permissions:
-```json
-{
-  "Effect": "Allow",
-  "Action": [
-    "aoss:APIAccessAll",
-    "s3:ListBucket",
-    "s3:GetObject",
-    "bedrock:InvokeModel"
-  ],
-  "Resource": "*"
-}
-```
+## 📚 Documentation
 
-### Issue: OpenSearch index engine error
-
-**Error**: "The OpenSearch Serverless engine type associated with your vector index is invalid"
-
-**Solution**: Index must use FAISS engine. Run:
-```bash
-python3 recreate_index.py
-```
-
-### Issue: Agent doesn't return document information
-
-**Checklist**:
-1. Verify ingestion job completed: `aws bedrock-agent list-ingestion-jobs`
-2. Check documents in S3: `aws s3 ls s3://<bucket>/`
-3. Test direct retrieval: `python3 test_kb.py`
-4. Verify agent-KB association in AWS Console
-
-## 🚀 Advanced Features
-
-### Multimodal Content Support
-
-Bedrock Knowledge Bases support images, audio, and video:
-
-**Option 1: Nova Multimodal Embeddings**
-- Direct embedding of multimedia files
-- Visual similarity search
-- Configure chunk duration (1-30 seconds) for audio/video
-
-**Option 2: Bedrock Data Automation**
-- Converts multimedia to text first
-- Audio transcription
-- Video scene descriptions
-- Image OCR
-
-### Custom Metadata Filtering
-
-Add metadata to documents for filtered retrieval:
-
-```python
-response = client.retrieve(
-    knowledgeBaseId='KB_ID',
-    retrievalQuery={'text': 'query'},
-    retrievalConfiguration={
-        'vectorSearchConfiguration': {
-            'filter': {
-                'equals': {
-                    'key': 'category',
-                    'value': 'technical'
-                }
-            }
-        }
-    }
-)
-```
-
-## 📚 Learning Resources
-
-- [Amazon Bedrock Documentation](https://docs.aws.amazon.com/bedrock/)
-- [Knowledge Bases for Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html)
-- [Agents for Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html)
-- [Model Context Protocol](https://modelcontextprotocol.io/)
-- [OpenSearch Serverless](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless.html)
+- [Architecture Details](docs/ARCHITECTURE.md)
+- [API Reference](docs/API.md)
+- [Deployment Guide](docs/DEPLOYMENT.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
 
 ## 🤝 Contributing
 
-Contributions are welcome! This project demonstrates AWS Bedrock capabilities and can be extended for various use cases.
-
-**Ideas for contributions**:
-- Add support for more embedding models
-- Implement semantic chunking strategy
-- Add monitoring dashboards
-- Create CI/CD pipeline
-- Add more test cases
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
-MIT License - See [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 👤 Author
 
 **Raul Rocha**
-
-This project was built to demonstrate production-ready RAG systems using AWS Bedrock services, showcasing:
-- Cloud architecture design
-- Infrastructure as Code (Terraform)
-- AI/ML integration
-- API development (MCP)
-- DevOps best practices
+- Email: raulrocha.rpr@gmail.com
+- GitHub: [@raulprocha](https://github.com/raulprocha)
 
 ## 🙏 Acknowledgments
 
@@ -417,4 +284,4 @@ This project was built to demonstrate production-ready RAG systems using AWS Bed
 
 ---
 
-**Note**: This is a demonstration project. For production use, additional considerations for scalability, monitoring, and security hardening are recommended.
+**Built with ❤️ to demonstrate production-ready RAG systems on AWS**
